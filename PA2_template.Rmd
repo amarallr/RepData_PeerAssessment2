@@ -8,16 +8,78 @@ output:
     toc: yes
   pdf_document: default
 ---
-## Title
-Your document should have a title that briefly summarizes your data analysis
+# Title
+USA weather events most harmful with respect to population health and greatest economic consequences.  
 
-## Synopsis
-Immediately after the title, there should be a synopsis which describes and summarizes your analysis in at most 10 complete sentences.
+# Synopsis
+Immediately after the title, there should be a synopsis which describes and summarizes your analysis in at most 10 complete sentences.  
 
-## Data Processing
-There should be a section titled Data Processing which describes (in words and code) how the data were loaded into R and processed for analysis. In particular, your analysis must start from the raw CSV file containing the data. You cannot do any preprocessing outside the document. If preprocessing is time-consuming you may consider using the cache = TRUE option for certain code chunks.
+# Data Processing
+There should be a section titled Data Processing which describes (in words and code) how the data were loaded into R and processed for analysis. In particular, your analysis must start from the raw CSV file containing the data. You cannot do any preprocessing outside the document. If preprocessing is time-consuming you may consider using the cache = TRUE option for certain code chunks.  
 
-## Results
+## Libraries
+```{r}
+library(plyr)
+library(sqldf)
+```
+
+## Loading and preprocessing the data
+
+1. Load the data (i.e. read.csv())
+```{r set_global_options, cache=TRUE}
+#  Set aspects of the locale for the R process
+Sys.setlocale("LC_TIME","English") 
+
+# Set the working directory
+setwd("C:\\R\\courseraworkspace\\repdata\\RepData_PeerAssessment2")
+
+# Define some options for knitr
+knitr::opts_chunk$set(tidy=FALSE, fig.path='figures/')
+knitr::opts_chunk$set(cache=TRUE, cache.path = "knitrcache/test-")
+
+# Set data file name
+dataFileName <- "repdata-data-StormData.csv"
+
+if(!exists("dsStormData")) {
+        # Read data file
+        dsStormData <- read.csv(dataFileName)
+        
+        # Select only the collumns needed
+        dsStormData <- dsStormData[ , c("EVTYPE", "BGN_DATE", "FATALITIES", "INJURIES", "PROPDMG", "PROPDMGEXP", "CROPDMG", "CROPDMGEXP")]
+        
+        # Format column as POSIXct datetime
+        dsStormData$BGN_DATE <- as.POSIXct(dsStormData$BGN_DATE,format="%m/%d/%Y %H:%M:%S")
+}
+
+
+# Display the dataset structure
+str(dsStormData)
+
+# Display the dataset dimensions
+dim(dsStormData)
+
+# Display the 10th first rows
+head(dsStormData, 10)
+
+# Decode PROPDMGEXP and CROPDMGEXP to numeric
+dsStormData$PROPDMGEXPValue <- as.numeric(mapvalues(dsStormData$PROPDMGEXP,
+c("K","M","", "B","m","+","0","5","6","?","4","2","3","h","7","H","-","1","8"), 
+c(1e3,1e6, 1, 1e9,1e6,  1,  1,1e5,1e6,  1,1e4,1e2,1e3,  1,1e7,1e2,  1, 10,1e8)))
+
+dsStormData$CROPDMGEXPValue <- as.numeric(mapvalues(dsStormData$CROPDMGEXP,
+c("","M","K","m","B","?","0","k","2"),
+c( 1,1e6,1e3,1e6,1e9,1,1,1e3,1e2)))
+
+
+# Calculate PROPDMG and CROPDMG values
+dsStormData$PROPDMGValue <- dsStormData$PROPDMG * dsStormData$PROPDMGEXPValue
+dsStormData$CROPDMGValue <- dsStormData$CROPDMG * dsStormData$CROPDMGEXPValue
+
+
+```
+
+
+# Results
 There should be a section titled Results in which your results are presented.
 
 You may have other sections in your analysis, but Data Processing and Results are required.
